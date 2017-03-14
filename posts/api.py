@@ -8,7 +8,16 @@ from . import decorators
 from posts import app
 from .database import session
 
-@app.route("/api/posts", methods=["Get"])
+# JSON Schema describing the structure of a post
+post_schema = {
+    "properties": {
+        "title": {"type": "string"},
+        "body": {"type": "string"}
+    },
+    "required": ["title", "body"]
+}
+
+@app.route("/api/posts", methods=["GET"])
 @decorators.accept("application/json")
 def posts_get():
     """ Get a list of posts """
@@ -31,6 +40,34 @@ def posts_get():
     # Convert the posts to JSON and return a response
     data = json.dumps([post.as_dictionary() for post in posts])
     return Response(data, 200, mimetype="application/json")
+
+@app.route("/api/posts", methods=["POST"])
+@decorators.accept("application/json")
+@decorators.require("application/json")
+def posts_post():
+    """ Add a new post """
+    data = request.json
+
+    # Check that the JSON supplied is valid
+    # If not you return a 422 Unprocessable Entry
+    try:
+        validate(data, post_schema)
+    except ValidationError as error:
+        data = {"message": error.message}
+        return Response(json.dumps(data), 422, mimetype="application/json")
+
+    # Add the post to the database
+    post = models.Post(title=data["title"], body=data["body"])
+    session.add(post)
+    session.commit()
+
+    # Return a 201 Created, containing the post as JSON and with the
+    # Location header set to the location of the post
+    data = json.dumps(post.as_dictionary())
+    headers = {"Location": url_for("post_get", id=post.id)}
+    return Response(data, 201, headers=headers, mimetype="application/json")
+
+
 
 
 @app.route("/api/posts/<int:id>", methods=["GET"])
@@ -70,6 +107,39 @@ def post_delete(id):
     session.commit()
 
     # Return the remaining posts as JSON
+    posts = session.query(models.Post).order_by(models.Post.id)
+    data = json.dumps([post.as_dictionary() for post in posts])
+    return Response(data, 200, mimetype="application/json")
+
+@app.route("/api/posts/<id>", methods=["PUT"])
+@decorators.accept("application/json")
+@decorators.require("application/json")
+def post_put():
+    """ Update an existing post """
+    # Check that the specified post exists
+    post = session.query(models.Post).get(id)
+    if not post:
+        message = "Could not find post with id {}".format(id)
+        data = json.dumps({"message": message})
+        return Response(data, 404, mimetype="application/json")
+
+    # Get JSON
+    data = request.json
+
+    # Check that the JSON supplied is valid
+    # If not you return a 422 Unprocessable Entry
+    try:
+        validate(data, post_schema)
+    except ValidationError as error:
+        data = {"message": error.message}
+        return Response(json.dumps(data), 422, mimetype="application/json")
+
+    # Update the selected post in the database
+    post = models.Post(title=data["title"], body=data["body"])
+    session.add(data)
+    session.commit()
+
+    # Return all posts in the database after update
     posts = session.query(models.Post).order_by(models.Post.id)
     data = json.dumps([post.as_dictionary() for post in posts])
     return Response(data, 200, mimetype="application/json")
