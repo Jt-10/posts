@@ -123,26 +123,29 @@ def post_put(id):
         data = json.dumps({"message": message})
         return Response(data, 404, mimetype="application/json")
 
-    # Get JSON
-    data = request.json
-
     # Check that the JSON supplied is valid
     # If not you return a 422 Unprocessable Entry
+    data = request.json
     try:
         validate(data, post_schema)
     except ValidationError as error:
         data = {"message": error.message}
         return Response(json.dumps(data), 422, mimetype="application/json")
 
-    # Update the selected post in the database
-    post = models.Post(title=data["title"], body=data["body"])
-    session.add(data)
+    # Update the post in the database
+    post.title = data["title"]
+    post.body = data["body"]
     session.commit()
 
-    # Return all posts in the database after update
-    posts = session.query(models.Post).order_by(models.Post.id)
-    data = json.dumps([post.as_dictionary() for post in posts])
-    return Response(data, 200, mimetype="application/json")
+    # Return a 201 CREATED, containing the post as JSON and with the
+    # Location header set to the location of the post
+    data = json.dumps(post.as_dictionary())
+    headers = {"Location": url_for("post_get", id=post.id)}
+    return Response(data, 201, headers=headers, mimetype="application/json")
+
+
+
+
 
 
 
