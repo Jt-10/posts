@@ -21,6 +21,7 @@ post_schema = {
 @decorators.accept("application/json")
 def posts_get():
     """ Get a list of posts """
+
     # Get the query string arguments
     title_like = request.args.get("title_like")
     body_like = request.args.get("body_like")
@@ -68,8 +69,6 @@ def posts_post():
     return Response(data, 201, headers=headers, mimetype="application/json")
 
 
-
-
 @app.route("/api/posts/<int:id>", methods=["GET"])
 @decorators.accept("application/json")
 def post_get(id):
@@ -92,6 +91,7 @@ def post_get(id):
 @decorators.accept("application/json")
 def post_delete(id):
     """ Single post endpoint """
+
     # Delete the post from the database
     post = session.query(models.Post).get(id)
 
@@ -111,10 +111,10 @@ def post_delete(id):
     data = json.dumps([post.as_dictionary() for post in posts])
     return Response(data, 200, mimetype="application/json")
 
-@app.route("/api/posts/<id>", methods=["PUT"])
+@app.route("/api/posts/<int:id>", methods=["PUT"])
 @decorators.accept("application/json")
 @decorators.require("application/json")
-def post_put():
+def post_put(id):
     """ Update an existing post """
     # Check that the specified post exists
     post = session.query(models.Post).get(id)

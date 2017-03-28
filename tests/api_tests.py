@@ -28,7 +28,8 @@ class TestAPI(unittest.TestCase):
         # Remove the tables and their data from the database
         Base.metadata.drop_all(engine)
 
-    def test_get_empty_posts(self):
+
+    def test_get_empty_posts(self): #1
         """ Getting posts from an empty database """
         response = self.client.get("/api/posts", headers=[("Accept", "application/json")]
                                    )
@@ -39,7 +40,8 @@ class TestAPI(unittest.TestCase):
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data, [])
 
-    def test_get_posts(self):
+
+    def test_get_posts(self): #2
         """ Getting posts from a populated database """
         postA = models.Post(title="Example Post A", body="Just a test")
         postB = models.Post(title="Example Post B", body="Still a test")
@@ -64,7 +66,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(postB["title"], "Example Post B")
         self.assertEqual(postB["body"], "Still a test")
 
-    def test_get_post(self):
+
+    def test_get_post(self): #3
         """ Getting a single post from a populated database """
         postA = models.Post(title="Example Post A", body="Just a test")
         postB = models.Post(title="Example Post B", body="Still a test")
@@ -82,7 +85,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post["title"], "Example Post B")
         self.assertEqual(post["body"], "Still a test")
 
-    def test_get_non_existent_post(self):
+
+    def test_get_non_existent_post(self): #4
         """ Getting a single post which doesn't exist """
         response = self.client.get("/api/posts/1", headers=[("Accept", "application/json")]
                                    )
@@ -93,7 +97,8 @@ class TestAPI(unittest.TestCase):
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["message"], "Could not find post with id 1")
 
-    def test_unsupported_accept_header(self):
+
+    def test_unsupported_accept_header(self): #5
         response = self.client.get("api/posts",
                                    headers=[("Accept", "application/xml")]
                                    )
@@ -105,7 +110,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(data["message"],
                          "Request must accept application/json data")
 
-    def test_delete_single_post(self):
+
+    def test_delete_single_post(self): #6
         """ Delete a single post from a populated database """
         postA = models.Post(title="Example Post A", body="Just a test")
         postB = models.Post(title="Example Post B", body="Still a test")
@@ -127,7 +133,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(postA["title"], "Example Post A")
         self.assertEqual(postA["body"], "Just a test")
 
-    def test_get_posts_with_title(self):
+
+    def test_get_posts_with_title(self): #7
         """ Filtering posts by title """
         postA = models.Post(title="Post with bells", body="Just a test")
         postB = models.Post(title="Post with whistles", body="Still a test")
@@ -154,7 +161,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post["title"], "Post with bells and whistles")
         self.assertEqual(post["body"], "Another test")
 
-    def test_get_posts_with_body(self):
+
+    def test_get_posts_with_body(self): #8
         """ Filtering posts by body """
         postA = models.Post(title="Post with bells", body="Just a test with bells")
         postB = models.Post(title="Post with whistles", body="Still a test with whistles")
@@ -181,7 +189,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post["title"], "Post with bells and whistles")
         self.assertEqual(post["body"], "Another test with bells and whistles")
 
-    def test_get_posts_with_title_and_body(self):
+
+    def test_get_posts_with_title_and_body(self): #9
         """ Filtering posts by title and body """
         postA = models.Post(title="Post with bells", body="Just a test with bells")
         postB = models.Post(title="Post with whistles", body="Still a test with whistles")
@@ -204,7 +213,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post["title"], "Post with bells and whistles")
         self.assertEqual(post["body"], "Another test with bells and whistles")
 
-    def test_post_post(self):
+
+    def test_post_post(self): #10
         """ Posting a new post """
         data = {
             "title": "Example Post",
@@ -233,7 +243,8 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(post.title, "Example Post")
         self.assertEqual(post.body, "Just a test")
 
-    def test_unsupported_mimetype(self):
+
+    def test_unsupported_mimetype(self): #11
         data = "<xml></xml>"
         response = self.client.post("/api/posts",
                 data=json.dumps(data),
@@ -247,7 +258,8 @@ class TestAPI(unittest.TestCase):
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["message"], "Request must contain application/json data")
 
-    def test_invalid_data(self):
+
+    def test_invalid_data(self): #12
         """ Posting a post with an invalid body """
         data = {
             "title": "Example Post",
@@ -265,7 +277,8 @@ class TestAPI(unittest.TestCase):
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["message"], "32 is not of type 'string'")
 
-    def test_missing_data(self):
+
+    def test_missing_data(self): #13
         """ Posting a post with a missing body """
         data = {
             "title": "Example Post",
@@ -282,7 +295,8 @@ class TestAPI(unittest.TestCase):
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["message"], "'body' is a required property")
 
-    def test_put_post(self):
+
+    def test_put_post(self): #14
         """ Put/Update title and body of existing post """
         postA = models.Post(title="Example Post A", body="Just a test")
         postB = models.Post(title="Example Post B", body="Still a test")
@@ -292,7 +306,7 @@ class TestAPI(unittest.TestCase):
 
         data = {
             "title": "Replacement Post B",
-            "body": "Replaces Example Post B"
+            "body": "Replaces Example Post B",
         }
 
         response = self.client.put("api/posts/{}".format(postB.id),
@@ -303,6 +317,7 @@ class TestAPI(unittest.TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.mimetype, "application/json")
+        self.assertEqual(urlparse(response.headers.get("Location")).path, "/api/posts/{}".format(postB.id))
 
         data = json.loads(response.data.decode("ascii"))
         self.assertEqual(data["id"], 2)
