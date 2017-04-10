@@ -142,10 +142,3 @@ def post_put(id):
     data = json.dumps(post.as_dictionary())
     headers = {"Location": url_for("post_get", id=post.id)}
     return Response(data, 201, headers=headers, mimetype="application/json")
-
-
-
-
-
-
-
